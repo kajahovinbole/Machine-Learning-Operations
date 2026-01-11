@@ -1,0 +1,11 @@
+.git
+__pycache__/
+*.pyc
+.venv/
+.env
+.ipynb_checkpoints/
+data/
+models/
+wandb/
+.DS_Store
+.vscode/
