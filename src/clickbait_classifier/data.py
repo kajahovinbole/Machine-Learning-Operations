@@ -1,10 +1,13 @@
 from pathlib import Path
+from typing import Annotated
 
 import pandas as pd
 import torch
 import typer
 from torch.utils.data import Dataset, TensorDataset
 from transformers import AutoTokenizer
+
+app = typer.Typer()
 
 
 class ClickbaitDataset(Dataset):
@@ -49,13 +52,14 @@ def load_data(
     return train_set, val_set, test_set
 
 
+@app.command()
 def preprocess(
-    raw_path: Path = Path("data/raw/clickbait_data.csv"),
-    output_path: Path = Path("data/processed"),
-    model_name: str = "distilbert-base-uncased",
-    max_length: int = 128,
-    train_split: float = 0.7,
-    val_split: float = 0.15,
+    raw_path: Annotated[Path, typer.Option(help="Path to raw CSV")] = Path("data/raw/clickbait_data.csv"),
+    output_path: Annotated[Path, typer.Option("--output", "-o", help="Output directory")] = Path("data/processed"),
+    model_name: Annotated[str, typer.Option(help="Tokenizer model name")] = "distilbert-base-uncased",
+    max_length: Annotated[int, typer.Option(help="Max sequence length")] = 128,
+    train_split: Annotated[float, typer.Option(help="Train split ratio")] = 0.7,
+    val_split: Annotated[float, typer.Option(help="Validation split ratio")] = 0.15,
 ) -> None:
     """Tokenize raw data and save train/val/test splits as tensors."""
     print(f"Loading data from {raw_path}")
@@ -103,4 +107,4 @@ def preprocess(
 
 
 if __name__ == "__main__":
-    typer.run(preprocess)
+    app()

@@ -1,19 +1,27 @@
 from pathlib import Path
+from typing import Annotated
 
 import torch
+import typer
 from torch import nn
 from torch.utils.data import DataLoader
 
 from clickbait_classifier.data import load_data
 from clickbait_classifier.model import ClickbaitClassifier
 
+app = typer.Typer()
 
+
+@app.command()
 def train(
     processed_path: Path = Path("data/processed"),
-    epochs: int = 3,
-    batch_size: int = 32,
-    lr: float = 2e-5,
-    device: str = "auto",
+    epochs: Annotated[int, typer.Option(help="Number of training epochs")] = 3,
+    batch_size: Annotated[int, typer.Option("--batch-size", "-b", help="Batch size")] = 32,
+    lr: Annotated[float, typer.Option("--lr", "-l", help="Learning rate")] = 2e-5,
+    device: Annotated[str, typer.Option(help="Device to use (auto, cpu, cuda, mps)")] = "auto",
+    output: Annotated[Path, typer.Option("--output", "-o", help="Model output path")] = Path(
+        "models/clickbait_model.pt"
+    ),
 ) -> None:
     """Train the clickbait classifier."""
     # Set device
@@ -73,11 +81,10 @@ def train(
         print(f"Epoch {epoch + 1}/{epochs} - Loss: {avg_loss:.4f} - Val Acc: {val_acc:.4f}")
 
     # Save model
-    models_path = Path("models")
-    models_path.mkdir(exist_ok=True)
-    torch.save(model.state_dict(), models_path / "clickbait_model.pt")
-    print(f"Model saved to {models_path / 'clickbait_model.pt'}")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(model.state_dict(), output)
+    print(f"Model saved to {output}")
 
 
 if __name__ == "__main__":
-    train()
+    app()

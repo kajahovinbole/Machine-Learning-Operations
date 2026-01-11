@@ -1,6 +1,9 @@
 import torch
+import typer
 from torch import nn
 from transformers import AutoModel
+
+app = typer.Typer()
 
 
 class ClickbaitClassifier(nn.Module):
@@ -26,14 +29,38 @@ class ClickbaitClassifier(nn.Module):
         return logits
 
 
-if __name__ == "__main__":
+@app.command()
+def info() -> None:
+    """Show model architecture and parameter count."""
     model = ClickbaitClassifier()
 
-    # Test with dummy input
+    total_params = sum(p.numel() for p in model.parameters())
+    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+    print("Model: ClickbaitClassifier")
+    print(f"Base: distilbert-base-uncased")
+    print(f"Total parameters: {total_params:,}")
+    print(f"Trainable parameters: {trainable_params:,}")
+
+
+@app.command()
+def test() -> None:
+    """Run a quick forward pass test."""
+    model = ClickbaitClassifier()
+    model.eval()
+
     batch_size = 4
     seq_length = 128
     input_ids = torch.randint(0, 1000, (batch_size, seq_length))
     attention_mask = torch.ones(batch_size, seq_length, dtype=torch.long)
 
-    logits = model(input_ids, attention_mask)
-    print(f"Output shape: {logits.shape}")  # Should be [4, 2]
+    with torch.no_grad():
+        logits = model(input_ids, attention_mask)
+
+    print(f"Input shape: ({batch_size}, {seq_length})")
+    print(f"Output shape: {logits.shape}")
+    print("Forward pass successful!")
+
+
+if __name__ == "__main__":
+    app()

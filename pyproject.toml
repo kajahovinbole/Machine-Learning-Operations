@@ -40,3 +40,8 @@ omit = ["tests/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[project.scripts]
+train = "clickbait_classifier.train:app"
+preprocess = "clickbait_classifier.data:app"
+model = "clickbait_classifier.model:app"
