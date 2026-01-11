@@ -36,11 +36,10 @@ def docker_build(ctx: Context, progress: str = "plain") -> None:
         echo=True,
         pty=not WINDOWS
     )
-    
+
 @task
 def docker_up(ctx: Context, service: str = "") -> None:
-    """Run docker compose."""
-    cmd = "docker compose up"
+    cmd = "docker compose up --build"
     if service:
         cmd += f" {service}"
     ctx.run(cmd, echo=True, pty=not WINDOWS)
