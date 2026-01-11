@@ -34,40 +34,32 @@ We'll track experiments in W&B and let the results guide our final choice. The p
 This project uses Docker and Docker Compose to run the training and API
 in a reproducible environment.
 
+
 ### Prerequisites
 - Docker Desktop installed and running
 
 ---
 
-### Build Docker images
-From the repository root:
-
-```bash
-docker build -f dockerfiles/api.dockerfile -t clickbait-api .
-docker build -f dockerfiles/train.dockerfile -t clickbait-train .
-```
-
 ### Run API
-- Starts the api dockerfile:
+Builds the image (if needed) and starts the API service:
 
 ```bash
-docker compose up api
+uv run invoke docker-up api
 ```
-The API will be available at:
-	•	http://localhost:8000/docs
 
+The API will be available at: http://localhost:8000/docs
 Stop with Ctrl+C.
 
-### Run training
-- Runs the training container once and exits:
+## Run training
+Builds the image (if needed), runs the training container once, and exits:
 
 ```bash
-docker compose run --rm train
+docker compose run --rm --build train
 ```
 
-### Run all services
-- Starts both the API and training services:
+## Run all services
+Builds images (if needed) and starts both the API and training services:
 
 ```bash
-docker compose up
+uv run invoke docker-up
 ```
