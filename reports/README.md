@@ -61,9 +61,9 @@ will check the repositories and the code to verify your answers.
 - [x] Remember to fill out the `requirements.txt` and `requirements_dev.txt` file with whatever dependencies that you
       are using (M2+M6)
 - [x] Remember to comply with good coding practices (`pep8`) while doing the project (M7)
-- [ ] Do a bit of code typing and remember to document essential parts of your code (M7)
-- [ ] Setup version control for your data or part of your data (M8)
-- [ ] Add command line interfaces and project commands to your code where it makes sense (M9)
+- [x] Do a bit of code typing and remember to document essential parts of your code (M7)
+- [ ] Setup version control for your data or part of your data (M8) (**SKIP**)
+- [ ] Add command line interfaces and project commands to your code where it makes sense (M9) -Poul
 - [ ] Construct one or multiple docker files for your code (M10)
 - [ ] Build the docker files locally and make sure they work as intended (M10)
 - [ ] Write one or multiple configurations files for your experiments (M11) -Yannick
@@ -583,4 +583,3 @@ s221337, s253737, s253736, s224193
 > _All members contributed to code by..._
 > _We have used ChatGPT to help debug our code. Additionally, we used GitHub Copilot to help write some of our code._
 > Answer:
-
