@@ -249,6 +249,10 @@ s221337, s253737, s253736, s224193
 > _addition to the main branch. To merge code we ..._
 >
 > Answer:
+Yes, our workflow includes the use of branches and pull requests. We work on separate feature branches when adding new functionality, instead of working directly on the main branch. This way we can develop and experiment without risking breaking the stable version of the project.
+When a feature was ready, it was pushed to its branch and merged into main through a pull request. The pull request make it possible to review the changes, see which files are modified, and resolve merge conflicts in a controlled way before code was merged. This is useful when multiple group members worked on similar files.
+Using branches and pull requests improves version control by keeping the main branch stable, making collaboration safer, and providing a clear history of changes and decisions made during development.
+
 
 --- question 9 fill here ---
 
@@ -264,6 +268,10 @@ s221337, s253737, s253736, s224193
 > _pipeline_
 >
 > Answer:
+No, we did not use DVC for managing data in this project. However, DVC would be beneficial in projects where datasets are large, change over time, or cannot be easily stored directly in Git. As it is described in the course material, DVC allows data to be versioned alongside code without placing the actual data files in the Git repository, instead storing them in external storage such as cloud buckets.
+This would be useful in machine learning workflows where data preprocessing, feature engineering, or dataset composition evolves during development. If we used DVC, it would be possible to reproduce experiments exactly by checking out a specific Git commit and pulling the corresponding data version.
+DVC can also help ensure consistency across team members and environments, and reduce errors caused by using different versions of the data. This improves reproducibility, collaboration, and traceability in ML projects.
+
 
 --- question 10 fill here ---
 
@@ -346,7 +354,13 @@ s221337, s253737, s253736, s224193
 > _For our project we developed several images: one for training, inference and deployment. For example to run the_
 > _training docker image: `docker run trainer:latest lr=1e-3 batch_size=64`. Link to docker file: <weblink>_
 >
-> Answer:
+> Answer:  In this project, we used Docker to create reproducible and isolated environments for both model training and serving an API. We created separate Docker images to clearly separate concerns and ensure that the same environment could be used across different machines and by different team members.
+One Docker image was used for training the model. This image installs all required dependencies using uv and runs the training script inside a container. 
+We also created a separate Docker image for a FastAPI-based API, which exposes a simple endpoint and can later be extended for inference. 
+Using Docker improved the reproducibility, reduced dependency-related issues, and it made it easier to standardize how training and API execution are performed.
+
+#husk å legge til kommandoer og link når det er klart.
+
 
 --- question 15 fill here ---
 
@@ -362,6 +376,11 @@ s221337, s253737, s253736, s224193
 > _run of our main code at some point that showed ..._
 >
 > Answer:
+When running into bugs during our experiments, we used a combination of systematic debugging and incremental testing. We used error messages and stack traces to identify where failures occurred, for example when dependencies were missing, paths were incorrect, or the Docker environment did not match the local setup. 
+We also used the Git history and branches to revert or compare changes when new bugs were introduced, which made it easier to identify the source of errors.
+
+#husk å legge til profiling of code
+
 
 --- question 16 fill here ---
 
