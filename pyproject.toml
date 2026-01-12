@@ -20,10 +20,12 @@ dependencies = [
     "invoke>=2.2.1",
     "loguru>=0.7.3",
     "pandas>=2.3.3",
+    "python-dotenv>=1.0.0",
     "torch>=2.9.1",
     "transformers>=4.57.3",
     "typer>=0.21.1",
     "uvicorn>=0.40.0",
+    "wandb>=0.23.1",
 ]
 
 [dependency-groups]

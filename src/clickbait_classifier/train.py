@@ -5,6 +5,7 @@ from typing import Annotated, Optional
 import numpy as np
 import torch
 import typer
+import wandb
 from hydra import compose, initialize_config_dir
 from loguru import logger
 from omegaconf import OmegaConf
@@ -12,6 +13,7 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from clickbait_classifier.data import load_data
+from clickbait_classifier.load_from_env_file import api_key
 from clickbait_classifier.model import ClickbaitClassifier
 from clickbait_classifier.utils import save_config
 
@@ -123,6 +125,38 @@ def train(
         f"Learning rate: {cfg.training.lr}"
     )
 
+    # Initialize Weights & Biases
+    use_wandb = False
+    if api_key:
+        try:
+            wandb.login(key=api_key)
+            use_wandb = True
+            logger.info("Logged in to Weights & Biases")
+        except Exception as e:
+            logger.warning(f"Failed to login to wandb: {e}")
+    else:
+        logger.warning("WANDB_API_KEY not found, wandb logging will be disabled")
+    
+    if use_wandb:
+        wandb.init(
+            project="clickbait-classifier",
+            name=f"run-{cfg.model.model_name}-epochs{cfg.training.epochs}-lr{cfg.training.lr}",
+            config={
+                "model_name": cfg.model.model_name,
+                "num_labels": cfg.model.num_labels,
+                "dropout": cfg.model.dropout,
+                "epochs": cfg.training.epochs,
+                "batch_size": cfg.training.batch_size,
+                "learning_rate": cfg.training.lr,
+                "device": str(device),
+                "seed": cfg.training.seed,
+                "train_size": len(train_set),
+                "val_size": len(val_set),
+                "test_size": len(test_set),
+            },
+        )
+        logger.info("Weights & Biases initialized")
+
     # Model
     logger.info(f"Initializing model: {cfg.model.model_name}")
     model = ClickbaitClassifier(
@@ -188,6 +222,14 @@ def train(
 
         val_acc = correct / total
         logger.info(f"Epoch {epoch + 1}/{cfg.training.epochs} - Loss: {avg_loss:.4f} - Val Acc: {val_acc:.4f}")
+        
+        # Log metrics to wandb
+        if use_wandb:
+            wandb.log({
+                "epoch": epoch + 1,
+                "train_loss": avg_loss,
+                "val_accuracy": val_acc,
+            })
 
     # Save model
     output_path = Path(cfg.paths.model_output)
@@ -199,6 +241,18 @@ def train(
     config_output_path = output_path.parent / "config.yaml"
     save_config(cfg, config_output_path)
     logger.info(f"Configuration saved to {config_output_path}")
+
+    # Log model artifact to wandb
+    if use_wandb:
+        artifact = wandb.Artifact("clickbait-model", type="model")
+        artifact.add_file(str(output_path))
+        artifact.add_file(str(config_output_path))
+        wandb.log_artifact(artifact)
+        logger.info("Model artifact logged to Weights & Biases")
+        
+        # Finish wandb run
+        wandb.finish()
+        logger.info("Weights & Biases run completed")
 
 
 if __name__ == "__main__":
