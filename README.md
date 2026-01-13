@@ -100,5 +100,5 @@ uv run pre-commit run --all-files
 
 ### Skip hooks:
 ```bash
-git commit --no-verify
+git commit -m"your commit message" --no-verify
 ```
