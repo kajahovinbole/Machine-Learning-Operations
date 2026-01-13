@@ -12,6 +12,7 @@ from loguru import logger
 from omegaconf import OmegaConf
 from torch import nn
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from clickbait_classifier.data import load_data
 from clickbait_classifier.load_from_env_file import api_key
@@ -191,7 +192,7 @@ def train(
         model.train()
         total_loss = 0
 
-        for i, batch in enumerate(train_loader):
+        for i, batch in enumerate(tqdm(train_loader, desc=f"Epoch {epoch + 1}/{cfg.training.epochs}")):
             input_ids, attention_mask, labels = batch
             input_ids = input_ids.to(device)
             attention_mask = attention_mask.to(device)
@@ -232,7 +233,7 @@ def train(
         model.eval()
         correct, total = 0, 0
         with torch.no_grad():
-            for batch in val_loader:
+            for batch in tqdm(val_loader, desv="Validation", leave=False):
                 input_ids, attention_mask, labels = batch
                 input_ids = input_ids.to(device)
                 attention_mask = attention_mask.to(device)

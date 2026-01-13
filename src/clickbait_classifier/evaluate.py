@@ -10,6 +10,7 @@ from hydra import compose, initialize_config_dir
 from loguru import logger
 from omegaconf import OmegaConf
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from clickbait_classifier.data import load_data
 from clickbait_classifier.model import ClickbaitClassifier
@@ -50,7 +51,7 @@ def evaluate(model: torch.nn.Module, loader: DataLoader, device: torch.device) -
     correct = 0
     total = 0
 
-    for batch in loader:
+    for batch in tqdm(loader, desc="Evaluating"):
         input_ids, attention_mask, labels = batch
         input_ids = input_ids.to(device)
         attention_mask = attention_mask.to(device)
@@ -105,7 +106,7 @@ def main() -> None:
         dropout=cfg.model.dropout,
     ).to(device)
 
-    state_dict = torch.load(args.checkpoint, map_location="cpu")
+    state_dict = torch.load(args.checkpoint, map_location="cpu", weights_only=True)
     model.load_state_dict(state_dict)
 
     results = evaluate(model, loader, device)
@@ -127,4 +128,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
