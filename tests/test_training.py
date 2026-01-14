@@ -1,14 +1,13 @@
 from pathlib import Path
 from types import SimpleNamespace
 
+import clickbait_classifier.lightning_module as lightning_module
+import clickbait_classifier.model as model_module
+import clickbait_classifier.train as train_module
 import pytest
 import torch
 from torch import nn
 from torch.utils.data import TensorDataset
-
-import clickbait_classifier.lightning_module as lightning_module
-import clickbait_classifier.model as model_module
-import clickbait_classifier.train as train_module
 
 
 class DummyModel(nn.Module):
@@ -109,4 +108,3 @@ def test_train_runs_with_lightning(monkeypatch, tmp_path, patch_transformer):
     ckpt_files = list(latest_run.glob("*.ckpt"))
     other_files = list(latest_run.glob("*"))
     assert len(ckpt_files) > 0 or len(other_files) > 0, f"No outputs saved in {latest_run}"
-
