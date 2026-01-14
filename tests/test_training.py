@@ -1,7 +1,6 @@
 from pathlib import Path
 from types import SimpleNamespace
 
-import pytest
 import torch
 from torch import nn
 from torch.utils.data import TensorDataset
@@ -19,7 +18,6 @@ class DummyModel(nn.Module):
         x = input_ids.float().mean(dim=1, keepdim=True)
         return self.classifier(x)
 
-
 def _dummy_cfg(tmp_path: Path):
     return SimpleNamespace(
         data=SimpleNamespace(processed_path=str(tmp_path / "data" / "processed")),
@@ -32,14 +30,14 @@ def _dummy_cfg(tmp_path: Path):
             lr=1e-3,
             shuffle=False,
             optimizer=SimpleNamespace(),
+            optimizer=SimpleNamespace(),
             loss=SimpleNamespace(),
         ),
-        paths=SimpleNamespace(model_output=str(tmp_path / "models" / "clickbait_model.ckpt")),
+        paths=SimpleNamespace(model_output=str(tmp_path / "models" / "clickbait_model.pt")),
     )
 
 
 def _dummy_datasets():
-    """Create small dummy datasets for testing."""
     num_samples, seq_len = 8, 16
     input_ids = torch.randint(0, 1000, (num_samples, seq_len), dtype=torch.long)
     attention_mask = torch.ones((num_samples, seq_len), dtype=torch.long)
@@ -48,57 +46,34 @@ def _dummy_datasets():
     return ds, ds, ds
 
 
-
-@pytest.fixture
-def patch_transformer(monkeypatch):
-    """Patch AutoModel to avoid downloading real models."""
-    def _fake_from_pretrained(_name: str):
-        return DummyTransformer(hidden_size=16)
-
-    monkeypatch.setattr(model_module.AutoModel, "from_pretrained", _fake_from_pretrained)
-
-
 def test_train_runs_with_lightning(monkeypatch, tmp_path, patch_transformer):
-    """Test that Lightning training runs and saves checkpoint."""
     cfg = _dummy_cfg(tmp_path)
 
-    monkeypatch.setattr(train_module, "_load_config", lambda _config_path: cfg)
-    monkeypatch.setattr(train_module, "load_data", lambda _processed_path: _dummy_datasets())
+    # gå til tmp_path så relative paths ("models/...") havner der
+    monkeypatch.chdir(tmp_path)
 
-    # Patch riktig sted: LightningModule importerer ClickbaitClassifier herfra
-    monkeypatch.setattr(lightning_module, "ClickbaitClassifier", lambda **kwargs: DummyModel(num_labels=2))
-
-    # Disable wandb
-    monkeypatch.setattr(train_module, "api_key", None)
-
-    # Gjør testen stabil: ikke kjør ekte trening / checkpointing
-    class DummyTrainer:
-        def fit(self, model, train_loader, val_loader):
-            return None
-
-    monkeypatch.setattr(train_module.pl, "Trainer", lambda *args, **kwargs: DummyTrainer())
-
-
-
-def test_train_runs_with_lightning(monkeypatch, tmp_path, patch_transformer):
-    """Test that Lightning training runs and saves checkpoint."""
-    cfg = _dummy_cfg(tmp_path)
-
-    # Track what was saved
     saved = {"config_path": None}
 
-    # Avoid hydra config from disk
     monkeypatch.setattr(train_module, "_load_config", lambda _config_path: cfg)
-
-    # Avoid reading actual data files
     monkeypatch.setattr(train_module, "load_data", lambda _processed_path: _dummy_datasets())
 
     def fake_save_config(_cfg, path):
         saved["config_path"] = Path(path)
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        Path(path).write_text("# dummy config")
 
     monkeypatch.setattr(train_module, "save_config", fake_save_config)
+    monkeypatch.setattr(train_module, "api_key", None)
 
     train_module.train()
 
-    assert saved["config_path"] == Path(cfg.paths.model_output).parent / "config.yaml"
+    assert saved["config_path"] is not None
+
+    run_dirs = list((tmp_path / "models").glob("2*"))
+    assert len(run_dirs) > 0, "No model directory created"
+
+    latest_run = max(run_dirs, key=lambda p: p.stat().st_mtime)
+    ckpt_files = list(latest_run.glob("*.ckpt"))
+    assert len(ckpt_files) > 0, f"No checkpoint saved in {latest_run}"
+
 
