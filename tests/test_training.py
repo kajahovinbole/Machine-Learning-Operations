@@ -48,6 +48,7 @@ def _dummy_datasets():
     return ds, ds, ds
 
 
+
 @pytest.fixture
 def patch_transformer(monkeypatch):
     """Patch AutoModel to avoid downloading real models."""
@@ -77,7 +78,20 @@ def test_train_runs_with_lightning(monkeypatch, tmp_path, patch_transformer):
 
     monkeypatch.setattr(train_module.pl, "Trainer", lambda *args, **kwargs: DummyTrainer())
 
+
+
+def test_train_runs_with_lightning(monkeypatch, tmp_path, patch_transformer):
+    """Test that Lightning training runs and saves checkpoint."""
+    cfg = _dummy_cfg(tmp_path)
+
+    # Track what was saved
     saved = {"config_path": None}
+
+    # Avoid hydra config from disk
+    monkeypatch.setattr(train_module, "_load_config", lambda _config_path: cfg)
+
+    # Avoid reading actual data files
+    monkeypatch.setattr(train_module, "load_data", lambda _processed_path: _dummy_datasets())
 
     def fake_save_config(_cfg, path):
         saved["config_path"] = Path(path)
