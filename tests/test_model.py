@@ -3,8 +3,8 @@ import torch
 from torch import nn
 
 import clickbait_classifier.model as model_module
-from clickbait_classifier.model import ClickbaitClassifier
 from clickbait_classifier.lightning_module import ClickbaitLightningModule
+from clickbait_classifier.model import ClickbaitClassifier
 
 
 class DummyTransformer(nn.Module):

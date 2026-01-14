@@ -64,7 +64,7 @@ def _dummy_datasets():
     return ds, ds, ds
 
 
-    
+
 @pytest.fixture
 def patch_transformer(monkeypatch):
     """Patch AutoModel to avoid downloading real models."""
@@ -85,7 +85,7 @@ def patch_transformer(monkeypatch):
             return None
 
     monkeypatch.setattr(train_module.pl, "Trainer", lambda *args, **kwargs: DummyTrainer())
- 
+
 
 
 def test_train_runs_with_lightning(monkeypatch, tmp_path, patch_transformer):
@@ -100,7 +100,7 @@ def test_train_runs_with_lightning(monkeypatch, tmp_path, patch_transformer):
 
     # Avoid reading actual data files
     monkeypatch.setattr(train_module, "load_data", lambda _processed_path: _dummy_datasets())
-    
+
     def fake_save_config(_cfg, path):
         saved["config_path"] = Path(path)
         # Create the file so assertions pass
