@@ -289,6 +289,11 @@ DVC can also help ensure consistency across team members and environments, and r
 > _here: <weblink>_
 >
 > Answer:
+We use GitHub Actions for continuous integration to automatically check the quality of our code. The CI workflow is triggered both on pull requests and on pushes to the main branch, which means that changes are checked before they are merged as well as after they are added to the main codebase. This helps us catch errors early and ensures that the main branch remains stable.
+Our CI setup includes both linting and unit testing. Linting is done using ruff, which checks for unused imports, formatting issues, and common Python errors. This helps keep the codebase clean and consistent, and prevents small mistakes from accumulating over time. In addition to linting, we use pytest for unit testing. The tests are used to verify that key parts of the project, such as data handling, model components, and training logic, work as expected.
+The workflow runs on multiple operating systems using a matrix configuration. We test the project on Ubuntu, macOS, and Windows, all using Python 3.13, to ensure that the code behaves consistently across different environments and platforms.
+Dependencies are installed using uv, which provides a fast and reproducible setup. By relying on uv together with GitHub Actions’ caching mechanisms, we avoid reinstalling all dependencies from scratch on every run, which reduces the overall CI runtime.
+We chose to keep the CI setup in a single workflow file, as this was sufficient for the size and complexity of our project while still covering the most important CI checks.
 
 --- question 11 fill here ---
 
