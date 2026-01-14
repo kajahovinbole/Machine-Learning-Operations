@@ -2,6 +2,7 @@ steps:
   # ===== TRAIN =====
   - name: 'gcr.io/cloud-builders/docker'
     id: 'Build train image'
+    env: ['DOCKER_BUILDKIT=1']
     args: [
       'build',
       '.',
@@ -21,6 +22,7 @@ steps:
   # ===== API =====
   - name: 'gcr.io/cloud-builders/docker'
     id: 'Build api image'
+    env: ['DOCKER_BUILDKIT=1']
     args: [
       'build',
       '.',
@@ -40,6 +42,7 @@ steps:
   # ===== EVALUATE =====
   - name: 'gcr.io/cloud-builders/docker'
     id: 'Build evaluate image'
+    env: ['DOCKER_BUILDKIT=1']
     args: [
       'build',
       '.',
