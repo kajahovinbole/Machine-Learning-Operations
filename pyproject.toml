@@ -3,7 +3,7 @@ requires = ["uv_build>=0.9.22,<0.10.0"]
 build-backend = "uv_build"
 
 [project]
-name = "clickbait-classifier"
+name = "clickbait_classifier"
 version = "0.1.0"
 description = "A clickbait detection classifier using transformers"
 authors = [
@@ -63,3 +63,7 @@ train = "clickbait_classifier.train:app"
 preprocess = "clickbait_classifier.data:app"
 model = "clickbait_classifier.model:app"
 evaluate = "clickbait_classifier.evaluate:app"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["clickbait_classifier*"]

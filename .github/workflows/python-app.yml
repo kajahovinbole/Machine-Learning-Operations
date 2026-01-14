@@ -46,6 +46,6 @@ jobs:
 
       - name: Test with pytest
         run: |
-          PYTHONPATH=srcuv run -m pytest
+          uv run -m pytest
 
 
