@@ -1,0 +1,78 @@
+name: Check staged model
+
+on:
+  repository_dispatch:
+    types: staged_model
+
+jobs:
+  identify_event:
+    runs-on: ubuntu-latest
+    outputs:
+      model_name: ${{ steps.set_output.outputs.model_name }}
+    steps:
+      - name: Check event payload
+        run: |
+          echo "Event type: repository_dispatch"
+          echo "Payload: ${{ toJson(github.event.client_payload) }}"
+
+      - name: Set model name output
+        id: set_output
+        run: |
+          echo "model_name=${{ github.event.client_payload.artifact_version_string }}" >> $GITHUB_OUTPUT
+
+  test_model:
+    runs-on: ubuntu-latest
+    needs: identify_event
+    env:
+      WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+      MODEL_NAME: ${{ needs.identify_event.outputs.model_name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          uv sync --locked --group dev
+
+      - name: Download model from W&B
+        run: |
+          uv run python -c "
+          import wandb
+          import os
+          api = wandb.Api()
+          artifact = api.artifact('${{ env.MODEL_NAME }}')
+          artifact.download(root='./staged_model')
+          print(f'Downloaded to ./staged_model')
+          "
+
+      - name: Find checkpoint file
+        id: find_ckpt
+        run: |
+          CKPT_PATH=$(find ./staged_model -name "*.ckpt" | head -1)
+          echo "ckpt_path=$CKPT_PATH" >> $GITHUB_OUTPUT
+          echo "Found checkpoint: $CKPT_PATH"
+
+      - name: Run performance tests
+        env:
+          MODEL_PATH: ${{ steps.find_ckpt.outputs.ckpt_path }}
+        run: |
+          uv run pytest tests/performancetests/ -v
+
+      - name: Promote to production (if tests pass)
+        if: success()
+        run: |
+          uv run python -c "
+          import wandb
+          import os
+          api = wandb.Api()
+          artifact = api.artifact('${{ env.MODEL_NAME }}')
+          artifact.aliases.append('production')
+          artifact.save()
+          print(f'Added production alias to ${{ env.MODEL_NAME }}')
+          "
