@@ -354,10 +354,9 @@ DVC can also help ensure consistency across team members and environments, and r
 > _For our project we developed several images: one for training, inference and deployment. For example to run the_
 > _training docker image: `docker run trainer:latest lr=1e-3 batch_size=64`. Link to docker file: <weblink>_
 >
-> Answer:  In this project, we used Docker to create reproducible and isolated environments for both model training and serving an API. We created separate Docker images to clearly separate concerns and ensure that the same environment could be used across different machines and by different team members.
-One Docker image was used for training the model. This image installs all required dependencies using uv and runs the training script inside a container.
-We also created a separate Docker image for a FastAPI-based API, which exposes a simple endpoint and can later be extended for inference.
-Using Docker improved the reproducibility, reduced dependency-related issues, and it made it easier to standardize how training and API execution are performed.
+> Answer: 
+In our project, Docker was used to containerize parts of the machine learning pipeline to make the project easier to run and reproduce across different machines. We created separate Docker images for training, evaluation, and the API. This allowed us to isolate each task and ensure that everyone in the group could run the same code with the same dependencies, independent of their local environment.
+The training image is used to train the model and save the trained weights to a shared folder. The evaluation image loads these saved weights and evaluates the model on validation or test data, storing the results as a JSON file. The API image runs a FastAPI application using Uvicorn, which exposes an endpoint for making predictions with the trained model.
 
 #husk å legge til kommandoer og link når det er klart.
 

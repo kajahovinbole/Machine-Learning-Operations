@@ -12,6 +12,5 @@ COPY src/ src/
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked
 
-# Kjør python direkte fra venv som uv sync lager
 ENTRYPOINT ["/app/.venv/bin/python", "-u", "/app/src/clickbait_classifier/evaluate.py"]
 
