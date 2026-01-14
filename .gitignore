@@ -16,3 +16,4 @@ reports/evaluation_results.json
 .coverage
 
 .DS_Store
+lightning_logs/
