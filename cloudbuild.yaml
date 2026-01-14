@@ -1,63 +1,19 @@
 steps:
-  # ===== TRAIN =====
-  - name: 'gcr.io/cloud-builders/docker'
-    id: 'Build train image'
-    env: ['DOCKER_BUILDKIT=1']
-    args: [
-      'build',
-      '.',
-      '-f',
-      'dockerfiles/train.dockerfile',
-      '-t',
-      'europe-west1-docker.pkg.dev/$PROJECT_ID/container-reg/clickbait-train'
-    ]
-
-  - name: 'gcr.io/cloud-builders/docker'
-    id: 'Push train image'
-    args: [
-      'push',
-      'europe-west1-docker.pkg.dev/$PROJECT_ID/container-reg/clickbait-train'
-    ]
-
-  # ===== API =====
-  - name: 'gcr.io/cloud-builders/docker'
-    id: 'Build api image'
-    env: ['DOCKER_BUILDKIT=1']
-    args: [
-      'build',
-      '.',
-      '-f',
-      'dockerfiles/api.dockerfile',
-      '-t',
-      'europe-west1-docker.pkg.dev/$PROJECT_ID/container-reg/clickbait-api'
-    ]
-
-  - name: 'gcr.io/cloud-builders/docker'
-    id: 'Push api image'
-    args: [
-      'push',
-      'europe-west1-docker.pkg.dev/$PROJECT_ID/container-reg/clickbait-api'
-    ]
-
-  # ===== EVALUATE =====
-  - name: 'gcr.io/cloud-builders/docker'
-    id: 'Build evaluate image'
-    env: ['DOCKER_BUILDKIT=1']
-    args: [
-      'build',
-      '.',
-      '-f',
-      'dockerfiles/evaluate.dockerfile',
-      '-t',
-      'europe-west1-docker.pkg.dev/$PROJECT_ID/container-reg/clickbait-evaluate'
-    ]
-
-  - name: 'gcr.io/cloud-builders/docker'
-    id: 'Push evaluate image'
-    args: [
-      'push',
-      'europe-west1-docker.pkg.dev/$PROJECT_ID/container-reg/clickbait-evaluate'
-    ]
-
+- name: 'gcr.io/cloud-builders/docker'
+  id: 'Build container image'
+  args: [
+    'build',
+    '.',
+    '-t',
+    'europe-west1-docker.pkg.dev/$PROJECT_ID/container-reg/clickbait-classifier',
+    '-f',
+    'dockerfiles/train.dockerfile'
+  ]
+- name: 'gcr.io/cloud-builders/docker'
+  id: 'Push container image'
+  args: [
+    'push',
+    'europe-west1-docker.pkg.dev/$PROJECT_ID/container-reg/clickbait-classifier'
+  ]
 options:
   logging: CLOUD_LOGGING_ONLY
