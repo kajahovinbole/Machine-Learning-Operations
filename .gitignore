@@ -8,6 +8,8 @@ wandb/
 
 models/*/*.ckpt
 
+models/*.pt
+
 data/
 
 reports/evaluation_results.json
