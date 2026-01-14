@@ -1,0 +1,9 @@
+{
+  "accuracy": 0.9889583333333334,
+  "n_samples": 4800,
+  "split": "test",
+  "checkpoint": "models/2026-01-14_00-34-39/clickbait_model.ckpt",
+  "device": "mps",
+  "batch_size": 32,
+  "model_name": "distilbert-base-uncased"
+}

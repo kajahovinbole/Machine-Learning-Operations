@@ -72,7 +72,7 @@ will check the repositories and the code to verify your answers.
 - [x] Use logging to log important events in your code (M14)
 - [x] Use Weights & Biases to log training progress and other important metrics/artifacts in your code (M14)
 - [ ] Consider running a hyperparameter optimization sweep (M14) - skipped, accuracy already ~98%
-- [ ] Use PyTorch-lightning (if applicable) to reduce the amount of boilerplate in your code (M15) - Poul
+- [x] Use PyTorch-lightning (if applicable) to reduce the amount of boilerplate in your code (M15) - Poul
 
 ### Week 2
 

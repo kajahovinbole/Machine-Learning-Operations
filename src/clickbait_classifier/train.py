@@ -1,23 +1,25 @@
+"""Lightning-based training script for clickbait classifier."""
+
 import random
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Optional
 
 import numpy as np
+import pytorch_lightning as pl
 import torch
 import torch.profiler
 import typer
-import wandb
 from hydra import compose, initialize_config_dir
 from loguru import logger
 from omegaconf import OmegaConf
-from torch import nn
+from pytorch_lightning.callbacks import ModelCheckpoint, RichProgressBar
+from pytorch_lightning.loggers import WandbLogger
 from torch.utils.data import DataLoader
-from tqdm import tqdm
 
 from clickbait_classifier.data import load_data
+from clickbait_classifier.lightning_module import ClickbaitLightningModule
 from clickbait_classifier.load_from_env_file import api_key
-from clickbait_classifier.model import ClickbaitClassifier
 from clickbait_classifier.utils import save_config
 
 app = typer.Typer()
@@ -82,7 +84,7 @@ def train(
     ] = None,
     profile_run: Annotated[bool, typer.Option("--profile", "-p", help="Run torch profiler")] = False,
 ) -> None:
-    """Train the clickbait classifier."""
+    """Train the clickbait classifier using PyTorch Lightning."""
     # Load configuration
     cfg = _load_config(config)
 
@@ -106,16 +108,20 @@ def train(
         cfg.paths.model_output = str(output)
 
     # Set seed for reproducibility
-    seed = cfg.training.seed
-    _set_seed(seed)
-    logger.info(f"Set random seed to {seed}")
+    pl.seed_everything(cfg.training.seed)
+    logger.info(f"Set random seed to {cfg.training.seed}")
 
-    # Set device
+    # Determine accelerator
     device_str = cfg.training.device
     if device_str == "auto":
-        device_str = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
-    device = torch.device(device_str)
-    logger.info(f"Using device: {device}")
+        accelerator = "auto"
+    elif device_str == "mps":
+        accelerator = "mps"
+    elif device_str == "cuda":
+        accelerator = "gpu"
+    else:
+        accelerator = "cpu"
+    logger.info(f"Using accelerator: {accelerator}")
 
     # Load data
     processed_path = Path(cfg.data.processed_path)
@@ -124,8 +130,9 @@ def train(
         train_set,
         batch_size=cfg.training.batch_size,
         shuffle=cfg.training.shuffle,
+        num_workers=0,
     )
-    val_loader = DataLoader(val_set, batch_size=cfg.training.batch_size)
+    val_loader = DataLoader(val_set, batch_size=cfg.training.batch_size, num_workers=0)
 
     logger.info(f"Train: {len(train_set)}, Val: {len(val_set)}, Test: {len(test_set)}")
     logger.info(
@@ -134,157 +141,60 @@ def train(
         f"Learning rate: {cfg.training.lr}"
     )
 
-    # Initialize Weights & Biases
-    use_wandb = False
-    if api_key:
-        try:
-            wandb.login(key=api_key)
-            use_wandb = True
-            logger.info("Logged in to Weights & Biases")
-        except Exception as e:
-            logger.warning(f"Failed to login to wandb: {e}")
-    else:
-        logger.warning("WANDB_API_KEY not found, wandb logging will be disabled")
-
-    if use_wandb:
-        wandb.init(
-            project="clickbait-classifier",
-            name=f"run-{cfg.model.model_name}-epochs{cfg.training.epochs}-lr{cfg.training.lr}",
-            config={
-                "model_name": cfg.model.model_name,
-                "num_labels": cfg.model.num_labels,
-                "dropout": cfg.model.dropout,
-                "epochs": cfg.training.epochs,
-                "batch_size": cfg.training.batch_size,
-                "learning_rate": cfg.training.lr,
-                "device": str(device),
-                "seed": cfg.training.seed,
-                "train_size": len(train_set),
-                "val_size": len(val_set),
-                "test_size": len(test_set),
-            },
-        )
-        logger.info("Weights & Biases initialized")
-
-    # Model
+    # Initialize Lightning model
     logger.info(f"Initializing model: {cfg.model.model_name}")
-    model = ClickbaitClassifier(
+    model = ClickbaitLightningModule(
         model_name=cfg.model.model_name,
         num_labels=cfg.model.num_labels,
         dropout=cfg.model.dropout,
-    ).to(device)
-    logger.info("Model initialized and moved to device")
+        lr=cfg.training.lr,
+        weight_decay=cfg.training.optimizer.weight_decay,
+    )
 
-    # Optimizer - use Hydra instantiate if _target_ is present, otherwise fallback
-    if hasattr(cfg.training.optimizer, "_target_"):
-        from hydra.utils import instantiate
+    # Callbacks
+    callbacks = [
+        RichProgressBar(),
+        ModelCheckpoint(
+            dirpath=run_dir,
+            filename="clickbait_model",
+            monitor="val_acc",
+            mode="max",
+            save_top_k=1,
+        ),
+    ]
 
-        # Ensure optimizer lr matches training.lr (in case it was overridden)
-        cfg.training.optimizer.lr = cfg.training.lr
-        optimizer = instantiate(cfg.training.optimizer, params=model.parameters())
+    # W&B Logger
+    wandb_logger = None
+    if api_key:
+        wandb_logger = WandbLogger(
+            project="clickbait-classifier",
+            name=f"lightning-{cfg.model.model_name}-epochs{cfg.training.epochs}-lr{cfg.training.lr}",
+            log_model=True,
+        )
+        logger.info("W&B logging enabled")
     else:
-        optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.training.lr)
+        logger.warning("WANDB_API_KEY not found, wandb logging will be disabled")
 
-    # Loss function - use Hydra instantiate if _target_ is present, otherwise fallback
-    if hasattr(cfg.training.loss, "_target_"):
-        from hydra.utils import instantiate
+    # Trainer
+    trainer = pl.Trainer(
+        max_epochs=cfg.training.epochs,
+        accelerator=accelerator,
+        callbacks=callbacks,
+        logger=wandb_logger,
+        deterministic=True,
+        profiler="simple" if profile_run else None,
+    )
 
-        criterion = instantiate(cfg.training.loss)
-    else:
-        criterion = nn.CrossEntropyLoss()
-
-    # Training loop
-    for epoch in range(cfg.training.epochs):
-        model.train()
-        total_loss = 0
-
-        for i, batch in enumerate(tqdm(train_loader, desc=f"Epoch {epoch + 1}/{cfg.training.epochs}")):
-            input_ids, attention_mask, labels = batch
-            input_ids = input_ids.to(device)
-            attention_mask = attention_mask.to(device)
-            labels = labels.to(device)
-
-            optimizer.zero_grad()
-
-            if profile_run and i == 10 and epoch == 0:
-                activities = [torch.profiler.ProfilerActivity.CPU]
-                if device == "cuda":
-                    activities.append(torch.profiler.ProfilerActivity.CUDA)
-
-                with torch.profiler.profile(
-                    activities=activities,
-                    record_shapes=True,
-                ) as profiler:
-                    logits = model(input_ids, attention_mask)
-                    loss = criterion(logits, labels)
-                    loss.backward()
-                    optimizer.step()
-
-                print(profiler.key_averages().table(sort_by="cpu_time_total", row_limit=10))
-
-                if device == "cuda":
-                    print(profiler.key_averages().table(sort_by="cuda_time_total", row_limit=10))
-
-            else:
-                logits = model(input_ids, attention_mask)
-                loss = criterion(logits, labels)
-                loss.backward()
-                optimizer.step()
-
-            total_loss += loss.item()
-
-        avg_loss = total_loss / len(train_loader)
-
-        # Validation
-        model.eval()
-        correct, total = 0, 0
-        with torch.no_grad():
-            for batch in tqdm(val_loader, desc="Validation", leave=False):
-                input_ids, attention_mask, labels = batch
-                input_ids = input_ids.to(device)
-                attention_mask = attention_mask.to(device)
-                labels = labels.to(device)
-
-                logits = model(input_ids, attention_mask)
-                preds = logits.argmax(dim=1)
-                correct += (preds == labels).sum().item()
-                total += labels.size(0)
-
-        val_acc = correct / total
-        logger.info(f"Epoch {epoch + 1}/{cfg.training.epochs} - Loss: {avg_loss:.4f} - Val Acc: {val_acc:.4f}")
-
-        # Log metrics to wandb
-        if use_wandb:
-            wandb.log(
-                {
-                    "epoch": epoch + 1,
-                    "train_loss": avg_loss,
-                    "val_accuracy": val_acc,
-                }
-            )
-
-    # Save model
-    output_path = Path(cfg.paths.model_output)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    torch.save(model.state_dict(), output_path)
-    logger.info(f"Model saved to {output_path}")
+    # Train!
+    logger.info("Starting training...")
+    trainer.fit(model, train_loader, val_loader)
 
     # Save config alongside model
-    config_output_path = output_path.parent / "config.yaml"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    config_output_path = run_dir / "config.yaml"
     save_config(cfg, config_output_path)
     logger.info(f"Configuration saved to {config_output_path}")
-
-    # Log model artifact to wandb
-    if use_wandb:
-        artifact = wandb.Artifact("clickbait-model", type="model")
-        artifact.add_file(str(output_path))
-        artifact.add_file(str(config_output_path))
-        wandb.log_artifact(artifact)
-        logger.info("Model artifact logged to Weights & Biases")
-
-        # Finish wandb run
-        wandb.finish()
-        logger.info("Weights & Biases run completed")
+    logger.info(f"Training complete. Best model saved to {run_dir}")
 
 
 if __name__ == "__main__":

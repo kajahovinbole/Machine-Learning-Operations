@@ -12,13 +12,13 @@ training:
   epochs: 3
   batch_size: 32
   lr: 2.0e-5
-  device: "auto"  # Options: auto, cpu, cuda, mps
-  seed: 42  # Random seed for reproducibility
+  device: "auto" # Options: auto, cpu, cuda, mps
+  seed: 42 # Random seed for reproducibility
 
   # Optimizer configuration
   optimizer:
     _target_: torch.optim.AdamW
-    lr: ${training.lr}  # Will be overridden by training.lr
+    lr: ${training.lr} # Will be overridden by training.lr
     weight_decay: 0.01
 
   # Loss function
@@ -49,5 +49,5 @@ data:
 
 # Paths for outputs
 paths:
-  model_output: "models/clickbait_model.pt"
-  config_output: "models/config.yaml"  # Where to save config when saving model
+  model_output: "models/clickbait_model.ckpt"
+  config_output: "models/config.yaml" # Where to save config when saving model

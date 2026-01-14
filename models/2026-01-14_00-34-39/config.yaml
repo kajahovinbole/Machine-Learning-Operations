@@ -1,0 +1,29 @@
+model:
+  model_name: distilbert-base-uncased
+  num_labels: 2
+  dropout: 0.1
+training:
+  epochs: 2
+  batch_size: 32
+  lr: 2.0e-05
+  device: auto
+  seed: 42
+  optimizer:
+    _target_: torch.optim.AdamW
+    lr: ${training.lr}
+    weight_decay: 0.01
+  loss:
+    _target_: torch.nn.CrossEntropyLoss
+  shuffle: true
+data:
+  raw_path: data/raw/clickbait_data.csv
+  processed_path: data/processed
+  output_path: data/processed
+  tokenizer_model_name: distilbert-base-uncased
+  max_length: 128
+  train_split: 0.7
+  val_split: 0.15
+  random_state: 42
+paths:
+  model_output: models/2026-01-14_00-34-39/clickbait_model.ckpt
+  config_output: models/config.yaml
