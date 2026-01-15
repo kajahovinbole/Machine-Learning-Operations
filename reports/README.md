@@ -84,7 +84,7 @@ will check the repositories and the code to verify your answers.
 - [x] Add a linting step to your continuous integration (M17) - Melina
 - [x] Add pre-commit hooks to your version control setup (M18) - Kaja
 - [ ] Add a continues workflow that triggers when data changes (M19) - skipped, we don't have dvc
-- [ ] Add a continues workflow that triggers when changes to the model registry is made (M19)  - Poul
+- [ ] Add a continues workflow that triggers when changes to the model registry is made (M19) - Poul
 - [x] Create a data storage in GCP Bucket for your data and link this with your data version control setup (M21) - skipped the version-control part since we havent implemented dvc and our data shouldnt change frequently
 - [x] Create a trigger workflow for automatically building your docker images (M21) - Kaja
 - [ ] Get your model training in GCP using either the Engine or Vertex AI (M21) - Kaja
