@@ -4,14 +4,19 @@ WORKDIR /app
 ENV PYTHONPATH=/app/src
 ENV UV_LINK_MODE=copy
 
+
 COPY pyproject.toml pyproject.toml
 COPY uv.lock uv.lock
 COPY README.md README.md
 
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --locked --no-install-project
 
 COPY src/ src/
+COPY models/ models/
+COPY configs/ configs/ 
+
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-dev
 
 EXPOSE 8000
 
