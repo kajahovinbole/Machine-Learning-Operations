@@ -171,7 +171,7 @@ def train(
         wandb_logger = WandbLogger(
             project="clickbait-classifier",
             name=f"lightning-{cfg.model.model_name}-epochs{cfg.training.epochs}-lr{cfg.training.lr}",
-            log_model=True,
+            log_model="all",
         )
         logger.info("W&B logging enabled")
     else:
