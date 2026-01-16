@@ -1,7 +1,9 @@
+from http import HTTPStatus
 from fastapi import FastAPI
 import torch
 from transformers import AutoTokenizer
 from clickbait_classifier.model import ClickbaitClassifier # Importerer din klasse
+
 
 app = FastAPI()
 
@@ -34,3 +36,12 @@ async def predict(text: str):
         prediction = torch.argmax(logits, dim=1).item()
     
     return {"text": text, "is_clickbait": bool(prediction)}
+
+@app.get("/")
+def root():
+    """Health check."""
+    response = {
+        "message": HTTPStatus.OK.phrase,
+        "status-code": HTTPStatus.OK,
+    }
+    return response
