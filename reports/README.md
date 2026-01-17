@@ -93,7 +93,7 @@ will check the repositories and the code to verify your answers.
 - [ ] Write API tests for your application and setup continues integration for these (M24) - Melina
 - [ ] Load test your application (M24) - Melina
 - [ ] Create a more specialized ML-deployment API using either ONNX or BentoML, or both (M25) - Melina/Kaja
-- [ ] Create a frontend for your API (M26) - Kaja/Melina
+- [x] Create a frontend for your API (M26) - Kaja/Melina
 
 ### Week 3
 

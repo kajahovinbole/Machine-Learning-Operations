@@ -346,3 +346,38 @@ gcloud run deploy clickbait-api-gcp \
 
 3. Test API
 https://<din-url>.run.app/docs
+
+
+
+## 🖥️ Frontend (Streamlit)
+
+### 🏃‍♀️ Run Locally
+To run the frontend on your machine during development:
+
+```bash
+uv run streamlit run src/clickbait_classifier/frontend.py
+```
+The app will be available at http://localhost:8501.
+
+### 🐳 Deploy to Cloud Run
+
+To deploy the frontend to Google Cloud Run, follow these steps:
+
+1. Build and Push Image
+```bash
+docker buildx build --platform linux/amd64 \
+  -f dockerfiles/frontend.dockerfile \
+  -t europe-west1-docker.pkg.dev/dtumlops-484212/container-reg/frontend:v1 \
+  --push .
+  ```
+2. Deploy Service Note: Streamlit runs on port 8501 by default.
+
+```bash
+gcloud run deploy clickbait-frontend \
+  --image=europe-west1-docker.pkg.dev/dtumlops-484212/container-reg/frontend:v1 \
+  --region=europe-west1 \
+  --allow-unauthenticated \
+  --port=8501
+```
+
+After deployment, click the URL provided in the terminal to open the app.
