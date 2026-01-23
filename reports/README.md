@@ -735,7 +735,7 @@ Overall, the cloud part of the project was time consuming because of the amount 
 
 In addition to the cloud challenges, we faced challenges with version control, for example regarding .gitignore and large model files accidentally entering the repository. We had to clean up tracked files and establish stricter guidelines on what data belongs in Git versus what should be generated locally.
 
-Furthermore, our initial Docker setup was inefficient, leading to slow rebuilds. By refactoring the Dockerfiles to leverage layer caching and utilizing environment variables, we significantly streamlined the containerization process. Finally, getting GitHub Actions to mirror our local environment was tricky due to Python version mismatches. We stabilized this by implementing a matrix strategy in our workflows and adding explicit linting and testing steps to catch errors early.
+Furthermore, our initial Docker setup was inefficient, leading to slow rebuilds. By refactoring the Dockerfiles to leverage layer caching and utilizing environment variables, we significantly streamlined the containerization process.
 
 ### Question 31
 
